@@ -125,6 +125,11 @@ td.num { padding: 0 10px; text-align: right; color: var(--ink-2); }
 
 .team-cell { position: sticky; left: 0; z-index: 1; background: var(--surface); text-align: left; padding: 0; }
 .scroll th:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+/* "Seed" label spanning the 1-7 columns; it slides along while the table scrolls sideways */
+tr.grp-row th { padding: 0 2px 4px; }
+th.grp { box-shadow: inset 0 -1px 0 var(--line); color: var(--ink-2); letter-spacing: .12em; text-align: left; }
+th.grp span { position: sticky; left: 0; display: inline-block; padding: 0 6px; }
+#odds-table th.grp span { left: 156px; }
 .team-btn {
   display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; gap: 6px;
   width: 100%; min-width: 150px; padding: 8px 10px 8px 8px; background: none; border: 0; border-radius: 6px; text-align: left; cursor: pointer;
@@ -205,6 +210,8 @@ td.ctr { padding: 0 8px; text-align: center; color: var(--ink-2); }
   td.win span { min-width: 60px; }
 
   /* By final record: final and rest-of-season records stay pinned on the left */
+  #odds-table th.grp span { left: 104px; }
+  #record-table th.grp span { left: 106px; }
   #record-table :is(th, td):nth-child(-n + 2) { position: sticky; z-index: 1; background: var(--surface); }
   #record-table :is(th, td):nth-child(1) { left: 0; width: 56px; min-width: 56px; padding: 0 4px 0 2px; }
   #record-table :is(th, td):nth-child(2) { left: 56px; width: 46px; min-width: 46px; padding: 0 4px; box-shadow: 1px 0 0 var(--line); }
@@ -308,6 +315,8 @@ function heat(n, d, cls = "") {
 }
 const teamCell = (t, i) =>
   `<td class="team-cell"><button class="team-btn" data-i="${i}" title="${esc(t.name)}"><span class="now">${i + 1}</span><span class="nm">${esc(t.owner)}</span></button></td>`;
+// Header row above the seed columns; `lead` holds one empty cell per column before them
+const seedGroup = (lead) => `<tr class="grp-row">${lead}<th class="grp" colspan="${P}"><span>Seed</span></th><th></th></tr>`;
 const seedHeads = Array.from({ length: P }, (_, s) => `<th>${s + 1}${s === 0 ? "<small>bye</small>" : ""}</th>`).join("") + "<th>Out</th>";
 
 function renderPicks() {
@@ -353,7 +362,7 @@ function renderOdds() {
     </tr>`;
     return i === P - 1 ? row + `<tr class="cut"><td colspan="${P + 6 + (locks.size ? 1 : 0)}"><div>Current playoff line</div></td></tr>` : row;
   });
-  $("odds-table").innerHTML = `<thead><tr><th class="l">Now / Team</th><th class="r">Rec</th><th class="r hide-sm">PF</th><th class="r hide-sm">Pts/wk<small>expected</small></th><th>Playoffs</th>${locks.size ? '<th class="l">Chg</th>' : ""}${seedHeads}</tr></thead><tbody>${rows.join("")}</tbody>`;
+  $("odds-table").innerHTML = `<thead>${seedGroup(`<th></th><th></th><th class="hide-sm"></th><th class="hide-sm"></th><th></th>${locks.size ? "<th></th>" : ""}`)}<tr><th class="l">Now / Team</th><th class="r">Rec</th><th class="r hide-sm">PF</th><th class="r hide-sm">Pts/wk<small>expected</small></th><th>Playoffs</th>${locks.size ? '<th class="l">Chg</th>' : ""}${seedHeads}</tr></thead><tbody>${rows.join("")}</tbody>`;
 }
 
 function renderSchedule() {
@@ -402,7 +411,7 @@ function renderRecord() {
       ${r.slice(0, P).map((n) => heat(n, total)).join("")}${heat(r[P], total, "out")}
     </tr>`);
   }
-  $("record-table").innerHTML = `<thead><tr><th>Final</th><th>ROS</th><th>Chance</th><th>Playoffs</th>${seedHeads}</tr></thead><tbody>${body.join("")}</tbody>`;
+  $("record-table").innerHTML = `<thead>${seedGroup("<th></th>".repeat(4))}<tr><th>Final</th><th>ROS</th><th>Chance</th><th>Playoffs</th>${seedHeads}</tr></thead><tbody>${body.join("")}</tbody>`;
 }
 
 function render() {
