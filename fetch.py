@@ -5,7 +5,7 @@ Run: python3 fetch.py   (league must be public, or add espn_s2/SWID cookies)
 import json
 import math
 import statistics
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.request import urlopen
 
@@ -140,7 +140,7 @@ teams = sorted(raw["teams"], key=lambda t: t["playoffSeed"])
 data = {
     "league": raw["settings"]["name"],
     "season": SEASON,
-    "pulled": datetime.now().isoformat(timespec="minutes"),
+    "pulled": datetime.now(timezone.utc).isoformat(timespec="minutes"),
     "throughWeek": through,
     "regularSeasonWeeks": reg_weeks,
     "playoffTeams": sched["playoffTeamCount"],
