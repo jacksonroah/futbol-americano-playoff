@@ -14,6 +14,22 @@ SEASON = 2026
 BASE = f"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{SEASON}/segments/0/leagues/{LEAGUE_ID}"
 OUT = Path(__file__).parent / "site" / "data.js"
 
+# ESPN team id -> (owner name shown on the page, short name for tight spots)
+OWNERS = {
+    1: ("Jackson", "Jack"),
+    2: ("Max", "Max"),
+    3: ("Micguire", "Mic"),
+    4: ("Maddox", "Mad"),
+    5: ("Jared", "Kirk"),
+    6: ("Jake", "Brus"),
+    7: ("Michael", "MJ"),
+    8: ("Derek", "Der"),
+    9: ("Tyler", "Ty"),
+    10: ("Jason R", "JsnR"),
+    12: ("Jason H", "JsnH"),
+    13: ("Cody", "Cody"),
+}
+
 raw = json.load(urlopen(f"{BASE}?view=mSettings&view=mTeam&view=mStandings&view=mSchedule&view=mMatchupScore"))
 sched = raw["settings"]["scheduleSettings"]
 reg_weeks = sched["matchupPeriodCount"]
@@ -147,8 +163,9 @@ data = {
     "teams": [
         {
             "id": t["id"],
+            "owner": OWNERS[t["id"]][0],
+            "short": OWNERS[t["id"]][1],
             "name": t["name"],
-            "abbrev": t["abbrev"],
             "wins": t["record"]["overall"]["wins"],
             "losses": t["record"]["overall"]["losses"],
             "ties": t["record"]["overall"]["ties"],
@@ -169,6 +186,6 @@ weeks_left = range(through + 1, reg_weeks + 1)
 print(f"{'':>5} {'rec':<6} {'avg':>6} {'season':>7} {'ESPN/wk':>8}   ESPN by week {list(weeks_left)}")
 for t in data["teams"]:
     by_week = [proj_mean[t["id"], w] for w in weeks_left]
-    print(f"{t['abbrev']:>5} {t['wins']}-{t['losses']:<4} {avg[t['id']]:6.1f} {season_mean[t['id']]:7.1f} {statistics.mean(by_week):8.1f}   "
-          + " ".join(f"{p:5.1f}" for p in by_week) + f"  {t['name']}")
+    print(f"{t['short']:>5} {t['wins']}-{t['losses']:<4} {avg[t['id']]:6.1f} {season_mean[t['id']]:7.1f} {statistics.mean(by_week):8.1f}   "
+          + " ".join(f"{p:5.1f}" for p in by_week) + f"  {t['owner']} ({t['name']})")
 print(f"\nwrote {OUT}")
