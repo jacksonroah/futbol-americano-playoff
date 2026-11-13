@@ -125,6 +125,7 @@ td { padding: 2px; text-align: center; white-space: nowrap; }
 td.num { padding: 0 10px; text-align: right; color: var(--ink-2); }
 
 .team-cell { position: sticky; left: 0; z-index: 1; background: var(--surface); text-align: left; padding: 0; }
+.scroll th:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); }
 .team-btn {
   display: grid; grid-template-columns: 20px 44px minmax(0, 1fr); align-items: center; gap: 6px;
   width: 100%; min-width: 230px; padding: 8px 10px 8px 8px; background: none; border: 0; border-radius: 6px; text-align: left; cursor: pointer;
@@ -179,8 +180,7 @@ td.rest { color: var(--ink-2); font-weight: 600; }
   tbody tr:not(.cut):hover td { background-color: color-mix(in srgb, var(--accent) 4%, var(--surface)); }
 }
 
-/* Phone layout: each table row becomes a grid with the summary on top and the
-   seed strip (or week strip) underneath, so nothing scrolls sideways. */
+/* Phone layout: one row per team, full team name pinned on the left, odds scroll sideways. */
 @media (max-width: 600px) {
   .panel { padding: 12px; }
   select { font-size: 16px; } /* smaller text makes iOS Safari zoom in on tap */
@@ -188,29 +188,24 @@ td.rest { color: var(--ink-2); font-weight: 600; }
   .wk { flex: 1 1 0; justify-content: center; padding: 9px 2px; }
   .side { grid-template-columns: 38px minmax(0, 1fr) auto 36px; padding: 10px; }
 
-  .scroll { overflow-x: visible; }
-  .stack, .stack thead, .stack tbody { display: block; }
-  .stack tr { display: grid; gap: 3px; align-items: center; padding-block: 5px; }
-  .stack tbody tr:not(.cut) { border-top: 1px solid var(--line); }
-  #odds-table tr, #record-table tr { grid-template-columns: repeat(8, minmax(0, 1fr)); }
-  #sched-table tr { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-  .stack th, .stack td { padding: 0; white-space: normal; }
-  .stack th { padding-bottom: 2px; }
-  .stack td.num, .stack td.rec, .stack td.rest, .stack td.chg { padding: 0 4px; min-width: 0; }
-  .stack .hide-sm { display: none; }
-  .stack .s2 { grid-column: span 2; }
-  .stack .s3 { grid-column: span 3; }
-  .stack .s4 { grid-column: span 4; }
-  .stack .o1 { order: 1; }
-  .stack .o2 { order: 2; }
-  .stack .team-cell { position: static; }
-  .stack .team-btn { min-width: 0; grid-template-columns: 16px 38px minmax(0, 1fr); padding: 6px 4px; }
-  .stack .team-btn .nm { max-width: none; }
-  .stack td.heat span { min-width: 0; height: 32px; font-size: 13px; }
-  .stack td.heat.po span { min-width: 0; font-size: 15px; }
-  .stack td.win span { min-width: 0; height: 40px; }
-  .stack td.win small { font-size: 10.5px; }
-  .stack tr.cut td { grid-column: 1 / -1; }
+  .hide-sm { display: none; }
+  .team-cell { box-shadow: 1px 0 0 var(--line); }
+  .team-btn { display: block; width: 138px; min-width: 0; padding: 6px 8px 6px 4px; line-height: 1.25; white-space: normal; }
+  .team-btn .now { display: inline-block; width: 16px; text-align: left; }
+  .team-btn .ab { font-size: 14px; margin-right: 3px; }
+  .team-btn .nm { max-width: none; white-space: normal; overflow: visible; font-size: 13.5px; }
+  td.num { padding: 0 6px; }
+  td.chg { padding: 0 4px; min-width: 30px; }
+  th { font-size: 11.5px; letter-spacing: .03em; padding-inline: 2px; }
+  td.heat span, td.heat.po span { min-width: 44px; height: 36px; font-size: 13px; }
+  td.heat.po span { font-weight: 700; }
+  td.heat.po { padding-right: 2px; }
+  td.win span { min-width: 60px; }
+
+  /* By final record: final and rest-of-season records stay pinned on the left */
+  #record-table :is(th, td):nth-child(-n + 2) { position: sticky; z-index: 1; background: var(--surface); }
+  #record-table :is(th, td):nth-child(1) { left: 0; width: 56px; min-width: 56px; padding: 0 4px 0 2px; }
+  #record-table :is(th, td):nth-child(2) { left: 56px; width: 46px; min-width: 46px; padding: 0 4px; box-shadow: 1px 0 0 var(--line); }
 }
 </style>
 </head>
@@ -245,16 +240,7 @@ td.rest { color: var(--ink-2); font-weight: 600; }
       <p class="hint" id="odds-hint"></p>
     </div>
     <div class="legend" id="legend" aria-label="Color key"></div>
-    <div class="scroll"><table class="stack" id="odds-table"></table></div>
-  </section>
-
-  <section class="panel" aria-labelledby="sched-h">
-    <div class="sec-head">
-      <h2 id="sched-h">Remaining schedule</h2>
-      <p class="hint" id="sched-hint"></p>
-    </div>
-    <div class="legend" id="sched-legend" aria-label="Color key"></div>
-    <div class="scroll"><table class="stack" id="sched-table"></table></div>
+    <div class="scroll"><table id="odds-table"></table></div>
   </section>
 
   <section class="panel" aria-labelledby="record-h">
@@ -263,7 +249,16 @@ td.rest { color: var(--ink-2); font-weight: 600; }
       <select id="team-select" aria-label="Team"></select>
     </div>
     <p class="hint" id="record-hint"></p>
-    <div class="scroll"><table class="stack" id="record-table"></table></div>
+    <div class="scroll"><table id="record-table"></table></div>
+  </section>
+
+  <section class="panel" aria-labelledby="sched-h">
+    <div class="sec-head">
+      <h2 id="sched-h">Remaining schedule</h2>
+      <p class="hint" id="sched-hint"></p>
+    </div>
+    <div class="legend" id="sched-legend" aria-label="Color key"></div>
+    <div class="scroll"><table id="sched-table"></table></div>
   </section>
 
   <footer class="notes" id="notes"></footer>
@@ -309,8 +304,8 @@ function heat(n, d, cls = "") {
   const b = n ? 1 + CUTS.filter((c) => p >= c).length : 0;
   return `<td class="heat ${cls}"><span class="b${b}">${fmt(n, d) || (cls.includes("po") ? "0" : "")}</span></td>`;
 }
-const teamCell = (t, i, span) =>
-  `<td class="team-cell ${span}"><button class="team-btn" data-i="${i}" title="Show ${esc(t.name)} by final record"><span class="now">${i + 1}</span><span class="ab">${esc(t.abbrev)}</span><span class="nm">${esc(t.name)}</span></button></td>`;
+const teamCell = (t, i) =>
+  `<td class="team-cell"><button class="team-btn" data-i="${i}" title="Show ${esc(t.name)} by final record"><span class="now">${i + 1}</span><span class="ab">${esc(t.abbrev)}</span><span class="nm">${esc(t.name)}</span></button></td>`;
 const seedHeads = Array.from({ length: P }, (_, s) => `<th>${s + 1}${s === 0 ? "<small>bye</small>" : ""}</th>`).join("") + "<th>Out</th>";
 
 function renderPicks() {
@@ -339,7 +334,7 @@ function renderPicks() {
 }
 
 function renderOdds() {
-  const r = result, base = baseline, poSpan = locks.size ? "s2" : "s3";
+  const r = result, base = baseline;
   $("odds-hint").textContent = locks.size
     ? `Percent of ${N.toLocaleString()} simulated seasons with your ${plural(locks.size, "pick")} locked in. Chg is the change in playoff odds from no picks.`
     : `Percent of ${N.toLocaleString()} simulated seasons. Click a team to highlight its games and see its odds by final record.`;
@@ -347,16 +342,16 @@ function renderOdds() {
     const s = r.seeds[i];
     const delta = Math.round((100 * (base.seeds[i][P] - s[P])) / N);
     const chg = locks.size ? `<td class="chg ${delta > 0 ? "up" : delta < 0 ? "down" : ""}">${delta > 0 ? "+" : ""}${delta || ""}</td>` : "";
-    const row = `<tr class="${i === selected ? "sel" : ""}">${teamCell(t, i, "s4")}
+    const row = `<tr class="${i === selected ? "sel" : ""}">${teamCell(t, i)}
       <td class="num">${record(t.wins, t.losses, t.ties)}</td>
       <td class="num hide-sm">${t.pf.toFixed(1)}</td>
       <td class="num hide-sm">${ptsPerWeek[mi][i].toFixed(1)}</td>
-      ${heat(N - s[P], N, `po ${poSpan}`)}${chg}
+      ${heat(N - s[P], N, "po")}${chg}
       ${s.slice(0, P).map((n) => heat(n, N)).join("")}${heat(s[P], N, "out")}
     </tr>`;
     return i === P - 1 ? row + `<tr class="cut"><td colspan="${P + 6 + (locks.size ? 1 : 0)}"><div>Current playoff line</div></td></tr>` : row;
   });
-  $("odds-table").innerHTML = `<thead><tr><th class="l s4">Now / Team</th><th class="r">Rec</th><th class="r hide-sm">PF</th><th class="r hide-sm">Pts/wk<small>expected</small></th><th class="${poSpan}">Playoffs</th>${locks.size ? '<th class="l">Chg</th>' : ""}${seedHeads}</tr></thead><tbody>${rows.join("")}</tbody>`;
+  $("odds-table").innerHTML = `<thead><tr><th class="l">Now / Team</th><th class="r">Rec</th><th class="r hide-sm">PF</th><th class="r hide-sm">Pts/wk<small>expected</small></th><th>Playoffs</th>${locks.size ? '<th class="l">Chg</th>' : ""}${seedHeads}</tr></thead><tbody>${rows.join("")}</tbody>`;
 }
 
 function renderSchedule() {
@@ -374,19 +369,19 @@ function renderSchedule() {
   const rows = teams.map((t, i) => {
     const cells = weeks.map((w) => {
       const x = games[i].find((x) => x.week === w);
-      if (!x) return '<td class="o2"></td>';
+      if (!x) return "<td></td>";
       const vs = `<small>vs ${esc(byId.get(x.opp).abbrev)}</small>`;
-      if (x.won !== null) return `<td class="win o2"><span class="${x.won ? "won" : "lost"}">${vs}<b>${x.won ? "W" : "L"}</b></span></td>`;
+      if (x.won !== null) return `<td class="win"><span class="${x.won ? "won" : "lost"}">${vs}<b>${x.won ? "W" : "L"}</b></span></td>`;
       const pct = 100 * x.p, d = Math.abs(pct - 50);
       const b = d < 5 ? 0 : d < 10 ? 1 : d < 20 ? 2 : d < 30 ? 3 : 4;
-      return `<td class="win o2${pct < 50 ? " out" : ""}"><span class="b${b}">${vs}<b>${Math.round(pct)}%</b></span></td>`;
+      return `<td class="win${pct < 50 ? " out" : ""}"><span class="b${b}">${vs}<b>${Math.round(pct)}%</b></span></td>`;
     }).join("");
     const expWins = sum(games[i].map((x) => (x.won === null ? x.p : +x.won)));
-    return `<tr class="${i === selected ? "sel" : ""}">${teamCell(t, i, "s2")}${cells}
-      <td class="num o1">${expWins.toFixed(1)}</td><td class="num o1">${sos[i].toFixed(1)}</td><td class="num o1">${ordinal(rank[i])}</td></tr>`;
+    return `<tr class="${i === selected ? "sel" : ""}">${teamCell(t, i)}${cells}
+      <td class="num">${expWins.toFixed(1)}</td><td class="num">${sos[i].toFixed(1)}</td><td class="num">${ordinal(rank[i])}</td></tr>`;
   });
-  $("sched-table").innerHTML = `<thead><tr><th class="l s2">Now / Team</th>${weeks.map((w) => `<th class="o2">Wk ${w}</th>`).join("")}
-    <th class="r o1">Exp wins<small>rest of season</small></th><th class="r o1">Opp pts/wk<small>expected</small></th><th class="r o1">SOS<small>1st = hardest</small></th></tr></thead><tbody>${rows.join("")}</tbody>`;
+  $("sched-table").innerHTML = `<thead><tr><th class="l">Now / Team</th>${weeks.map((w) => `<th>Wk ${w}</th>`).join("")}
+    <th class="r">Exp wins<small>rest of season</small></th><th class="r">Opp pts/wk<small>expected</small></th><th class="r">SOS<small>1st = hardest</small></th></tr></thead><tbody>${rows.join("")}</tbody>`;
 }
 
 function renderRecord() {
@@ -398,14 +393,14 @@ function renderRecord() {
     const r = rows[k], total = sum(r);
     if (!total) continue;
     body.push(`<tr>
-      <td class="rec s2">${record(t.wins + k, t.losses + left - k, t.ties)}</td>
-      <td class="rest s2">${k}-${left - k}</td>
-      <td class="num s2">${fmt(total, N)}</td>
-      ${heat(total - r[P], total, "po s2")}
+      <td class="rec">${record(t.wins + k, t.losses + left - k, t.ties)}</td>
+      <td class="rest">${k}-${left - k}</td>
+      <td class="num">${fmt(total, N)}</td>
+      ${heat(total - r[P], total, "po")}
       ${r.slice(0, P).map((n) => heat(n, total)).join("")}${heat(r[P], total, "out")}
     </tr>`);
   }
-  $("record-table").innerHTML = `<thead><tr><th class="l s2">Final</th><th class="l s2">Rest<small>of season</small></th><th class="r s2">Chance<small>of record</small></th><th class="s2">Playoffs</th>${seedHeads}</tr></thead><tbody>${body.join("")}</tbody>`;
+  $("record-table").innerHTML = `<thead><tr><th class="l">Final</th><th class="l">Rest<small>of season</small></th><th class="r">Chance<small>of record</small></th><th>Playoffs</th>${seedHeads}</tr></thead><tbody>${body.join("")}</tbody>`;
 }
 
 function render() {
