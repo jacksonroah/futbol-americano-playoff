@@ -30,6 +30,7 @@
   --even: #e9ecf0;
   --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
   --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --team-w: 108px; /* pinned team-name column */
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -123,19 +124,26 @@ th.r { text-align: right; }
 td { padding: 2px; text-align: center; white-space: nowrap; }
 td.num { padding: 0 10px; text-align: right; color: var(--ink-2); }
 
-.team-cell { position: sticky; left: 0; z-index: 1; background: var(--surface); text-align: left; padding: 0; }
+.team-cell { position: sticky; left: 0; z-index: 1; background: var(--surface); text-align: center; padding: 0; }
 .scroll th:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+/* Playoff odds: record column pinned next to the team name */
+#odds-table :is(th, td):nth-child(2) { position: sticky; left: var(--team-w); z-index: 1; background: var(--surface); width: 44px; min-width: 44px; padding-inline: 4px; text-align: center; }
+/* Divider between Playoffs and the seed columns */
+.sep { border-left: 1px solid var(--line); }
+th.sep, td.heat.sep { padding-left: 6px; }
+th b { color: var(--ink); font-weight: 700; }
+td.sos span.b0 { background: var(--even); }
 /* "Seed" label spanning the 1-7 columns; it slides along while the table scrolls sideways */
 tr.grp-row th { padding: 0 2px 4px; }
 th.grp { box-shadow: inset 0 -1px 0 var(--line); color: var(--ink-2); letter-spacing: .12em; text-align: left; }
 th.grp span { position: sticky; left: 0; display: inline-block; padding: 0 6px; }
-#odds-table th.grp span { left: 156px; }
+#odds-table th.grp span { left: calc(var(--team-w) + 44px); }
 .team-btn {
-  display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; gap: 6px;
-  width: 100%; min-width: 150px; padding: 8px 10px 8px 8px; background: none; border: 0; border-radius: 6px; text-align: left; cursor: pointer;
+  display: block; width: var(--team-w); padding: 8px 4px; background: none; border: 0; border-radius: 6px;
+  text-align: center; line-height: 1.25; cursor: pointer;
 }
-.team-btn .now { color: var(--muted); font-size: 13px; text-align: right; }
-.team-btn .nm { font-family: var(--font-display); font-weight: 700; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.team-btn .now { color: var(--muted); font-size: 12px; margin-right: 4px; }
+.team-btn .nm { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
 tr.sel .team-btn { box-shadow: inset 3px 0 0 var(--accent); }
 tr.sel .team-btn .nm { color: var(--accent); }
 
@@ -173,7 +181,16 @@ td.rest { color: var(--ink-2); font-weight: 600; }
 td.ctr { padding: 0 8px; text-align: center; color: var(--ink-2); }
 
 .notes { color: var(--ink-2); font-size: 14px; max-width: 72ch; display: grid; gap: 8px; }
-.notes h2 { font-size: 17px; color: var(--ink); }
+[hidden] { display: none !important; }
+.redraft { display: grid; gap: 10px; justify-items: start; }
+.redraft-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.redraft .status, .redraft label { margin: 0; font-weight: 600; color: var(--ink); }
+.redraft input { font: inherit; font-size: 16px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; width: min(320px, 100%); }
+.redraft button:disabled { opacity: .5; cursor: default; }
+#verdict { margin: 0; font-weight: 600; }
+#verdict:empty { display: none; }
+#verdict.approved { color: var(--up); }
+#verdict.denied { color: var(--down); }
 .notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
 
 /* Hover only where there is a mouse, so highlights don't stick after a tap on phones. */
@@ -197,10 +214,11 @@ td.ctr { padding: 0 8px; text-align: center; color: var(--ink-2); }
   .side .pr, .side.won .pr, .side.lost .pr { font-size: 14px; }
 
   .hide-sm { display: none; }
+  :root { --team-w: 88px; }
   .team-cell { box-shadow: 1px 0 0 var(--line); }
-  .team-btn { display: block; width: 100px; min-width: 0; padding: 6px 8px 6px 4px; line-height: 1.25; white-space: normal; }
-  .team-btn .now { display: inline-block; width: 21px; text-align: left; }
-  .team-btn .nm { white-space: normal; overflow: visible; font-size: 15px; }
+  #odds-table .team-cell { box-shadow: none; }
+  #odds-table :is(th, td):nth-child(2) { box-shadow: 1px 0 0 var(--line); }
+  .team-btn .nm { font-size: 15px; }
   td.num { padding: 0 6px; }
   td.chg { padding: 0 4px; min-width: 30px; }
   th { font-size: 11.5px; letter-spacing: .03em; padding-inline: 2px; }
@@ -210,7 +228,6 @@ td.ctr { padding: 0 8px; text-align: center; color: var(--ink-2); }
   td.win span { min-width: 60px; }
 
   /* By final record: final and rest-of-season records stay pinned on the left */
-  #odds-table th.grp span { left: 104px; }
   #record-table th.grp span { left: 106px; }
   #record-table :is(th, td):nth-child(-n + 2) { position: sticky; z-index: 1; background: var(--surface); }
   #record-table :is(th, td):nth-child(1) { left: 0; width: 56px; min-width: 56px; padding: 0 4px 0 2px; }
@@ -270,9 +287,25 @@ td.ctr { padding: 0 8px; text-align: center; color: var(--ink-2); }
     <div class="scroll"><table id="sched-table"></table></div>
   </section>
 
-  <footer class="notes" id="notes"></footer>
+  <footer class="notes">
+    <ul><li>Trust the process</li></ul>
+    <div class="redraft">
+      <button class="ghost" id="redraft-btn" type="button">Request a redraft</button>
+      <div class="redraft-row" id="redraft-requested" hidden>
+        <p class="status">Redraft requested.</p>
+        <button class="ghost" id="reason-btn" type="button">Give a reason</button>
+      </div>
+      <form class="redraft-row" id="reason-form" hidden>
+        <label for="reason">Reason</label>
+        <input id="reason" type="text" autocomplete="off" required>
+        <button class="ghost" type="submit">Submit</button>
+      </form>
+      <p id="verdict" role="status"></p>
+    </div>
+  </footer>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <script src="data.js"></script>
 <script src="sim.js"></script>
 <script>
@@ -316,8 +349,8 @@ function heat(n, d, cls = "") {
 const teamCell = (t, i) =>
   `<td class="team-cell"><button class="team-btn" data-i="${i}" title="${esc(t.name)}"><span class="now">${i + 1}</span><span class="nm">${esc(t.owner)}</span></button></td>`;
 // Header row above the seed columns; `lead` holds one empty cell per column before them
-const seedGroup = (lead) => `<tr class="grp-row">${lead}<th class="grp" colspan="${P}"><span>Seed</span></th><th></th></tr>`;
-const seedHeads = Array.from({ length: P }, (_, s) => `<th>${s + 1}${s === 0 ? "<small>bye</small>" : ""}</th>`).join("") + "<th>Out</th>";
+const seedGroup = (lead) => `<tr class="grp-row">${lead}<th class="grp sep" colspan="${P}"><span>Seed</span></th><th></th></tr>`;
+const seedHeads = Array.from({ length: P }, (_, s) => (s === 0 ? '<th class="sep"><b>Bye</b></th>' : `<th>${s + 1}</th>`)).join("") + "<th>Out</th>";
 
 function renderPicks() {
   const m = methods[mi];
@@ -358,16 +391,16 @@ function renderOdds() {
       <td class="num hide-sm">${t.pf.toFixed(1)}</td>
       <td class="num hide-sm">${ptsPerWeek[mi][i].toFixed(1)}</td>
       ${heat(N - s[P], N, "po")}${chg}
-      ${s.slice(0, P).map((n) => heat(n, N)).join("")}${heat(s[P], N, "out")}
+      ${s.slice(0, P).map((n, j) => heat(n, N, j ? "" : "sep")).join("")}${heat(s[P], N, "out")}
     </tr>`;
     return i === P - 1 ? row + `<tr class="cut"><td colspan="${P + 6 + (locks.size ? 1 : 0)}"><div>Current playoff line</div></td></tr>` : row;
   });
-  $("odds-table").innerHTML = `<thead>${seedGroup(`<th></th><th></th><th class="hide-sm"></th><th class="hide-sm"></th><th></th>${locks.size ? "<th></th>" : ""}`)}<tr><th class="l">Now / Team</th><th class="r">Rec</th><th class="r hide-sm">PF</th><th class="r hide-sm">Pts/wk<small>expected</small></th><th>Playoffs</th>${locks.size ? '<th class="l">Chg</th>' : ""}${seedHeads}</tr></thead><tbody>${rows.join("")}</tbody>`;
+  $("odds-table").innerHTML = `<thead>${seedGroup(`<th></th><th></th><th class="hide-sm"></th><th class="hide-sm"></th><th></th>${locks.size ? "<th></th>" : ""}`)}<tr><th>Now / Team</th><th>Rec</th><th class="r hide-sm">PF</th><th class="r hide-sm">Pts/wk<small>expected</small></th><th>Playoffs</th>${locks.size ? '<th class="l">Chg</th>' : ""}${seedHeads}</tr></thead><tbody>${rows.join("")}</tbody>`;
 }
 
 function renderSchedule() {
   const m = methods[mi];
-  $("sched-hint").textContent = `Win chance in each remaining game. Strength of schedule (SOS) is the average expected points of a team's remaining opponents.${locks.size ? " Your picks show as W or L." : ""}`;
+  $("sched-hint").textContent = `Win chance in each remaining game. Strength of schedule (SOS) ranks the average expected points of a team's remaining opponents: orange is tougher than average, blue is easier.${locks.size ? " Your picks show as W or L." : ""}`;
   const games = teams.map(() => []);
   L.games.forEach((g, k) => {
     const mg = m.games[k], lock = locks.get(k);
@@ -377,6 +410,8 @@ function renderSchedule() {
   const sos = games.map((gs) => sum(gs.map((x) => x.oppPts)) / gs.length);
   const rank = sos.map((v) => 1 + sos.filter((u) => u > v).length);
   const ordinal = (n) => n + ({ 1: "st", 2: "nd", 3: "rd" }[n] || "th"); // ESPN leagues max out at 20 teams
+  const sosMean = sum(sos) / sos.length;
+  const sosSd = Math.sqrt(sum(sos.map((v) => (v - sosMean) ** 2)) / sos.length);
   const rows = teams.map((t, i) => {
     const cells = weeks.map((w) => {
       const x = games[i].find((x) => x.week === w);
@@ -388,11 +423,13 @@ function renderSchedule() {
       return `<td class="win${pct < 50 ? " out" : ""}"><span class="b${b}">${vs}<b>${Math.round(pct)}%</b></span></td>`;
     }).join("");
     const expWins = sum(games[i].map((x) => (x.won === null ? x.p : +x.won)));
-    return `<tr class="${i === selected ? "sel" : ""}">${teamCell(t, i)}${cells}
-      <td class="num">${expWins.toFixed(1)}</td><td class="num">${sos[i].toFixed(1)}</td><td class="num">${ordinal(rank[i])}</td></tr>`;
+    const z = sosSd ? (sos[i] - sosMean) / sosSd : 0, b = Math.min(3, Math.floor(Math.abs(z) / 0.5));
+    const sosCell = `<td class="heat sos${z > 0 && b ? " out" : ""}"><span class="b${b}">${ordinal(rank[i])}</span></td>`;
+    return `<tr class="${i === selected ? "sel" : ""}">${teamCell(t, i)}${sosCell}${cells}
+      <td class="num">${expWins.toFixed(1)}</td><td class="num">${sos[i].toFixed(1)}</td></tr>`;
   });
-  $("sched-table").innerHTML = `<thead><tr><th class="l">Now / Team</th>${weeks.map((w) => `<th>Wk ${w}</th>`).join("")}
-    <th class="r">Exp wins<small>rest of season</small></th><th class="r">Opp pts/wk<small>expected</small></th><th class="r">SOS<small>1st = hardest</small></th></tr></thead><tbody>${rows.join("")}</tbody>`;
+  $("sched-table").innerHTML = `<thead><tr><th>Now / Team</th><th>SOS<small>1st = hardest</small></th>${weeks.map((w) => `<th>Wk ${w}</th>`).join("")}
+    <th class="r">Exp wins<small>rest of season</small></th><th class="r">Opp pts/wk<small>expected</small></th></tr></thead><tbody>${rows.join("")}</tbody>`;
 }
 
 function renderRecord() {
@@ -408,7 +445,7 @@ function renderRecord() {
       <td class="rest">${k}-${left - k}</td>
       <td class="ctr">${fmt(total, N)}%</td>
       ${heat(total - r[P], total, "po")}
-      ${r.slice(0, P).map((n) => heat(n, total)).join("")}${heat(r[P], total, "out")}
+      ${r.slice(0, P).map((n, j) => heat(n, total, j ? "" : "sep")).join("")}${heat(r[P], total, "out")}
     </tr>`);
   }
   $("record-table").innerHTML = `<thead>${seedGroup("<th></th>".repeat(4))}<tr><th>Final</th><th>ROS</th><th>Chance</th><th>Playoffs</th>${seedHeads}</tr></thead><tbody>${body.join("")}</tbody>`;
@@ -455,21 +492,39 @@ $("clear").addEventListener("click", () => { locks.clear(); run(); });
 
 const weeksLeft = L.regularSeasonWeeks - L.throughWeek;
 $("league-name").textContent = L.league;
-$("eyebrow").innerHTML = `<span>${L.season} season</span><span>Week ${L.throughWeek + 1} of ${L.regularSeasonWeeks}</span><span>${plural(weeksLeft, "week")} left</span>`;
+$("eyebrow").innerHTML = `<span>${L.season} season</span><span>Week ${L.throughWeek + 1} of ${L.regularSeasonWeeks}</span><span>${plural(weeksLeft, "week")} left</span><span>Updated ${new Date(L.pulled).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>`;
 $("facts").innerHTML = `<span>Ties in record go to points for</span>`;
 $("method").innerHTML = methods.map((m, j) => `<option value="${j}">${esc(m.name)}</option>`).join("");
 $("team-select").innerHTML = teams.map((t, i) => `<option value="${i}">${esc(t.owner)}</option>`).join("");
 $("legend").innerHTML = `<span class="key">Percent</span>` + LABELS.map((l, b) => `<span class="b${b + 1}">${l}</span>`).join("") + `<span class="key" style="margin-left:8px">Out column uses the same steps in orange</span>`;
 $("sched-legend").innerHTML = `<span class="key">Win chance</span><span class="b4">80+</span><span class="b3">70-80</span><span class="b2">60-70</span><span class="b1">55-60</span><span class="even">45-55</span>`
   + `<span class="out" style="display:contents"><span class="b1">40-45</span><span class="b2">30-40</span><span class="b3">20-30</span><span class="b4">&lt;20</span></span>`;
-const pulled = new Date(L.pulled).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
-$("notes").innerHTML = `<h2>How the simulation works</h2><ul>
-  <li>Data pulled from ESPN on ${pulled}, through week ${L.throughWeek}. Week ${L.throughWeek + 1} counts as unplayed until ESPN finalizes it and the data is pulled again.</li>
-  <li>Each simulated game draws both teams' scores from a bell curve centered on the method's expected points for that team that week. Lock a winner and the scores are redrawn until that team wins, so points-for tiebreaks stay realistic.</li>
-  <li>Seeding uses record first, then total points for, with simulated points added.</li>
-  <li>The ESPN projections method uses current rosters and assumes no waiver pickups or trades. A team with several starters on bye starts whoever it has left, even if that leaves a slot empty, so its projection for that week is lower than it will really be.</li>
-  <li>Projections for later weeks don't know about injuries that haven't happened yet.</li>
-</ul>`;
+$("redraft-btn").addEventListener("click", () => {
+  $("redraft-btn").disabled = true;
+  $("redraft-requested").hidden = false;
+});
+$("reason-btn").addEventListener("click", () => {
+  $("reason-btn").hidden = true;
+  $("reason-form").hidden = false;
+  $("reason").focus();
+});
+$("reason-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const approved = $("reason").value.toLowerCase().split(/[^a-z]+/).some((w) => /^(time|timezone|zone)s?$/.test(w));
+  $("verdict").className = approved ? "approved" : "denied";
+  $("verdict").textContent = approved
+    ? "Redraft approved. Micguire will give you your requested time for a redraft in Central Standard Time."
+    : "Request denied. Please list another reason.";
+  if (!approved) return;
+  const burst = (opts) => confetti({ zIndex: 1000, disableForReducedMotion: true, ...opts });
+  burst({ particleCount: 300, spread: 180, startVelocity: 60, origin: { y: 0.55 } });
+  const end = Date.now() + 2500;
+  (function cannons() {
+    burst({ particleCount: 10, angle: 60, spread: 65, origin: { x: 0, y: 0.75 } });
+    burst({ particleCount: 10, angle: 120, spread: 65, origin: { x: 1, y: 0.75 } });
+    if (Date.now() < end) requestAnimationFrame(cannons);
+  })();
+});
 
 render();
 </script>
