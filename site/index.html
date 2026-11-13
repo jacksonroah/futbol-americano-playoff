@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Futbol Americano Playoff Odds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: one column. Method picker in the header, then the pick-winners strip directly above
+   the odds table so every click shows its effect; method comparison, by-record and notes follow. */
+:root {
+  --bg: #f3f5f7;
+  --surface: #fcfdfd;
+  --ink: #11161d;
+  --ink-2: #48525f;
+  --muted: #687382;
+  --line: #dce1e7;
+  --accent: #1c5cab;
+  --up: #006300;
+  --down: #b42828;
+  --pick: #11161d;
+  --pick-ink: #fcfdfd;
+  /* Stepped ramps: 8 bins, light -> dark. Bins 1-5 take --lo-ink, 6-8 take --hi-ink. */
+  --b1: #e1edfc; --b2: #bcd6f7; --b3: #93bdf0; --b4: #6aa3ea; --b5: #3f88e2; --b6: #256abf; --b7: #1a5199; --b8: #0d366b;
+  --o1: #fde6dc; --o2: #fbcdb8; --o3: #f6ab89; --o4: #ef8a5e; --o5: #e2622e; --o6: #c24d1f; --o7: #9a3a14; --o8: #6e290d;
+  --lo-ink: #11161d;
+  --hi-ink: #ffffff;
+  --even: #e9ecf0;
+  --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1217; --surface: #161b22; --ink: #eef1f5; --ink-2: #b3bcc8; --muted: #8a95a3;
+    --line: #29313b; --accent: #6da7ec; --up: #3cbf3c; --down: #f07070; --pick: #eef1f5; --pick-ink: #11161d;
+    --b1: #1a2b42; --b2: #1b3a63; --b3: #1c4c87; --b4: #1f5ea8; --b5: #2a72cc; --b6: #4189e0; --b7: #6aa5ec; --b8: #9cc5f5;
+    --o1: #33211a; --o2: #4d2a1c; --o3: #6b351e; --o4: #8c4220; --o5: #b05224; --o6: #d0662f; --o7: #e8844f; --o8: #f5aa80;
+    --lo-ink: #eef1f5; --hi-ink: #11161d; --even: #232b35;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1217; --surface: #161b22; --ink: #eef1f5; --ink-2: #b3bcc8; --muted: #8a95a3;
+  --line: #29313b; --accent: #6da7ec; --up: #3cbf3c; --down: #f07070; --pick: #eef1f5; --pick-ink: #11161d;
+  --b1: #1a2b42; --b2: #1b3a63; --b3: #1c4c87; --b4: #1f5ea8; --b5: #2a72cc; --b6: #4189e0; --b7: #6aa5ec; --b8: #9cc5f5;
+  --o1: #33211a; --o2: #4d2a1c; --o3: #6b351e; --o4: #8c4220; --o5: #b05224; --o6: #d0662f; --o7: #e8844f; --o8: #f5aa80;
+  --lo-ink: #eef1f5; --hi-ink: #11161d; --even: #232b35;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+button, select { font: inherit; color: inherit; }
+button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap {
+  max-width: 1080px; margin: 0 auto; display: grid; gap: 24px;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+.top { display: grid; gap: 6px; }
+.eyebrow, .facts { display: flex; flex-wrap: wrap; gap: 4px 0; margin: 0; }
+.eyebrow { font-family: var(--font-display); font-weight: 600; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.facts { color: var(--ink-2); font-size: 14px; }
+.eyebrow span + span, .facts span + span { border-left: 1px solid var(--line); margin-left: 10px; padding-left: 10px; }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 6vw, 44px); line-height: 1; letter-spacing: .01em; text-transform: uppercase; text-wrap: balance; }
+
+.method { display: grid; gap: 6px; margin-top: 10px; max-width: 760px; }
+.method-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.method label { font-family: var(--font-display); font-weight: 600; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.method select { font-weight: 600; font-size: 16px; padding: 6px 10px; }
+.method p { margin: 0; color: var(--ink-2); font-size: 14px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 21px; letter-spacing: .04em; text-transform: uppercase; }
+.hint { margin: 0; color: var(--muted); font-size: 13.5px; }
+.push { margin-left: auto; }
+
+.ghost { background: none; border: 1px solid var(--line); border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 14px; font-weight: 500; }
+.ghost:hover { border-color: var(--ink-2); }
+select { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 14px; max-width: 100%; }
+
+.weeks { display: flex; flex-wrap: wrap; gap: 6px; }
+.wk {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  font-family: var(--font-display); font-weight: 600; font-size: 16px; letter-spacing: .05em; text-transform: uppercase;
+  background: none; border: 1px solid var(--line); border-radius: 6px; padding: 5px 12px;
+}
+.wk:hover { border-color: var(--ink-2); }
+.wk[aria-selected="true"] { background: var(--pick); color: var(--pick-ink); border-color: var(--pick); }
+.wk .n { font-family: var(--font-body); font-size: 12px; font-weight: 600; letter-spacing: 0; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--surface); display: inline-grid; place-items: center; }
+
+.matches { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 10px; }
+.match { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; display: grid; }
+.match.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.side {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) auto 40px; align-items: center; gap: 8px;
+  padding: 9px 12px; border: 0; text-align: left; cursor: pointer;
+  background: linear-gradient(to right, color-mix(in srgb, var(--accent) 10%, transparent) var(--w), transparent var(--w));
+}
+.side + .side { border-top: 1px solid var(--line); }
+.side:hover { background-color: color-mix(in srgb, var(--accent) 6%, transparent); }
+.side .ab { font-family: var(--font-display); font-weight: 700; font-size: 17px; }
+.side .nm { font-size: 13.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side .pts { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.side .pr { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.side.won { background: var(--pick); color: var(--pick-ink); }
+.side.won .nm, .side.won .pts { color: inherit; }
+.side.won .pr, .side.lost .pr { font-family: var(--font-display); font-weight: 700; font-size: 17px; }
+.side.lost { background: none; opacity: .45; }
+
+.scroll { overflow-x: auto; min-width: 0; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+th {
+  font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted); padding: 0 4px 8px; text-align: center; white-space: nowrap; vertical-align: bottom;
+}
+th small { display: block; font-size: 11px; letter-spacing: .08em; }
+th.l { text-align: left; }
+th.r { text-align: right; }
+td { padding: 2px; text-align: center; white-space: nowrap; }
+td.num { padding: 0 10px; text-align: right; color: var(--ink-2); }
+tbody tr:hover td { background-color: color-mix(in srgb, var(--accent) 4%, var(--surface)); }
+
+.team-cell { position: sticky; left: 0; z-index: 1; background: var(--surface); text-align: left; padding: 0; }
+.team-btn {
+  display: grid; grid-template-columns: 20px 44px minmax(0, 1fr); align-items: center; gap: 6px;
+  width: 100%; min-width: 230px; padding: 8px 10px 8px 8px; background: none; border: 0; border-radius: 6px; text-align: left; cursor: pointer;
+}
+.team-btn .now { color: var(--muted); font-size: 13px; text-align: right; }
+.team-btn .ab { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+.team-btn .nm { color: var(--ink-2); max-width: 190px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+tr.sel .team-btn { box-shadow: inset 3px 0 0 var(--accent); }
+tr.sel .team-btn .nm { color: var(--ink); font-weight: 600; }
+
+/* Heat cells and legend chips share the bin classes. */
+.b1 { background: var(--b1); } .b2 { background: var(--b2); } .b3 { background: var(--b3); } .b4 { background: var(--b4); }
+.b5 { background: var(--b5); } .b6 { background: var(--b6); } .b7 { background: var(--b7); } .b8 { background: var(--b8); }
+.out .b1 { background: var(--o1); } .out .b2 { background: var(--o2); } .out .b3 { background: var(--o3); } .out .b4 { background: var(--o4); }
+.out .b5 { background: var(--o5); } .out .b6 { background: var(--o6); } .out .b7 { background: var(--o7); } .out .b8 { background: var(--o8); }
+.b6, .b7, .b8 { color: var(--hi-ink); }
+td.heat span { display: grid; place-items: center; height: 34px; min-width: 44px; border-radius: 4px; color: var(--lo-ink); }
+td.heat span.b6, td.heat span.b7, td.heat span.b8 { color: var(--hi-ink); }
+td.heat.po span { min-width: 62px; font-size: 16px; font-weight: 600; }
+td.heat.po { padding-right: 8px; }
+td.chg { padding: 0 10px 0 2px; text-align: left; font-size: 13px; font-weight: 600; min-width: 40px; }
+.chg.up { color: var(--up); }
+.chg.down { color: var(--down); }
+
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-grid; place-items: center; min-width: 40px; height: 22px; padding: 0 6px; border-radius: 3px; color: var(--lo-ink); font-variant-numeric: tabular-nums; }
+.legend span.b6, .legend span.b7, .legend span.b8 { color: var(--hi-ink); }
+.legend .key { background: none; color: var(--muted); min-width: 0; padding: 0 4px 0 0; }
+
+tr.cut td { padding: 6px 0 4px; }
+tr.cut div { border-top: 1px dashed var(--ink-2); font-family: var(--font-display); font-weight: 600; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 3px 0 0 36px; text-align: left; }
+tbody tr.cut:hover td { background: none; }
+
+td.win span { display: grid; place-items: center; align-content: center; gap: 1px; height: 42px; min-width: 70px; border-radius: 4px; line-height: 1.1; color: var(--lo-ink); }
+td.win span.b0, .legend .even { background: var(--even); }
+td.win small { font-size: 11.5px; opacity: .8; }
+td.win b { font-size: 15px; font-weight: 600; }
+td.win span.won { background: var(--pick); color: var(--pick-ink); }
+td.win span.lost { background: none; color: var(--muted); }
+
+td.rec, td.rest { padding: 0 14px 0 6px; text-align: left; font-family: var(--font-display); font-weight: 700; font-size: 17px; }
+td.rest { color: var(--ink-2); font-weight: 600; }
+
+.notes { color: var(--ink-2); font-size: 14px; max-width: 72ch; display: grid; gap: 8px; }
+.notes h2 { font-size: 17px; color: var(--ink); }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+
+@media (max-width: 560px) {
+  .panel { padding: 12px; }
+  .team-btn { min-width: 150px; grid-template-columns: 18px 40px minmax(0, 1fr); }
+  .team-btn .nm { max-width: 80px; }
+  .side { grid-template-columns: 40px minmax(0, 1fr) auto 36px; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <p class="eyebrow" id="eyebrow"></p>
+    <h1 id="league-name"></h1>
+    <p class="facts" id="facts"></p>
+    <div class="method">
+      <div class="method-row">
+        <label for="method">Projection method</label>
+        <select id="method"></select>
+      </div>
+      <p id="method-about"></p>
+    </div>
+  </header>
+
+  <section class="panel" aria-labelledby="picks-h">
+    <div class="sec-head">
+      <h2 id="picks-h">Pick winners</h2>
+      <p class="hint">Click a team to lock in its win; click again to undo. Unpicked games are simulated. Each row shows expected points and win chance.</p>
+      <button class="ghost push" id="clear" hidden></button>
+    </div>
+    <div class="weeks" role="tablist" aria-label="Week" id="weeks"></div>
+    <div class="matches" role="tabpanel" id="matches"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="odds-h">
+    <div class="sec-head">
+      <h2 id="odds-h">Playoff odds</h2>
+      <p class="hint" id="odds-hint"></p>
+    </div>
+    <div class="legend" id="legend" aria-label="Color key"></div>
+    <div class="scroll"><table id="odds-table"></table></div>
+  </section>
+
+  <section class="panel" aria-labelledby="sched-h">
+    <div class="sec-head">
+      <h2 id="sched-h">Remaining schedule</h2>
+      <p class="hint" id="sched-hint"></p>
+    </div>
+    <div class="legend" id="sched-legend" aria-label="Color key"></div>
+    <div class="scroll"><table id="sched-table"></table></div>
+  </section>
+
+  <section class="panel" aria-labelledby="record-h">
+    <div class="sec-head">
+      <h2 id="record-h">By final record</h2>
+      <select id="team-select" aria-label="Team"></select>
+    </div>
+    <p class="hint" id="record-hint"></p>
+    <div class="scroll"><table id="record-table"></table></div>
+  </section>
+
+  <footer class="notes" id="notes"></footer>
+</main>
+
+<script src="data.js"></script>
+<script src="sim.js"></script>
+<script>
+const L = window.LEAGUE;
+const N = 20000, RNG_SEED = 20261113, P = L.playoffTeams;
+const teams = L.teams, methods = L.methods;
+const byId = new Map(teams.map((t) => [t.id, t]));
+const tIdx = new Map(teams.map((t, i) => [t.id, i]));
+const weeks = [...new Set(L.games.map((g) => g.week))];
+const locks = new Map();
+let activeWeek = weeks[0], selected = 0, mi = 0;
+let baseline = simulate(L, methods[mi], locks, N, RNG_SEED);
+let result = baseline;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const record = (w, l, t) => (t ? `${w}-${l}-${t}` : `${w}-${l}`);
+const sum = (a) => a.reduce((x, y) => x + y, 0);
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+// Expected points per week for each team under each method (average over its remaining games)
+const ptsPerWeek = methods.map((m) => teams.map((t) => {
+  const pts = L.games.flatMap((g, k) => (g.home === t.id ? [m.games[k].home] : g.away === t.id ? [m.games[k].away] : []));
+  return sum(pts) / pts.length;
+}));
+
+// Color bins, in percent: <5, 5-10, 10-20, 20-35, 35-50, 50-70, 70-90, 90+
+const CUTS = [5, 10, 20, 35, 50, 70, 90];
+const LABELS = ["<5", "5-10", "10-20", "20-35", "35-50", "50-70", "70-90", "90+"];
+function fmt(n, d) {
+  if (!n) return "";
+  if (n === d) return "100";
+  const p = (100 * n) / d;
+  return p > 99.5 ? ">99" : p < 0.5 ? "<1" : String(Math.round(p));
+}
+function heat(n, d, cls = "") {
+  const p = d ? (100 * n) / d : 0;
+  const b = n ? 1 + CUTS.filter((c) => p >= c).length : 0;
+  return `<td class="heat ${cls}"><span class="b${b}">${fmt(n, d) || (cls === "po" ? "0" : "")}</span></td>`;
+}
+const teamCell = (t, i) =>
+  `<td class="team-cell"><button class="team-btn" data-i="${i}" title="Show ${esc(t.name)} by final record"><span class="now">${i + 1}</span><span class="ab">${esc(t.abbrev)}</span><span class="nm">${esc(t.name)}</span></button></td>`;
+const seedHeads = Array.from({ length: P }, (_, s) => `<th>${s + 1}${s === 0 ? "<small>bye</small>" : ""}</th>`).join("") + "<th>Out</th>";
+
+function renderPicks() {
+  const m = methods[mi];
+  $("weeks").innerHTML = weeks.map((w) => {
+    const n = L.games.filter((g, k) => g.week === w && locks.has(k)).length;
+    return `<button class="wk" role="tab" aria-selected="${w === activeWeek}" data-week="${w}">Wk ${w}${n ? `<span class="n">${n}</span>` : ""}</button>`;
+  }).join("");
+
+  const selId = teams[selected].id;
+  $("matches").innerHTML = L.games.map((g, k) => [g, k]).filter(([g]) => g.week === activeWeek).map(([g, k]) => {
+    const lock = locks.get(k), mg = m.games[k];
+    const side = (id, pts, p) => {
+      const t = byId.get(id), pct = Math.round(100 * p);
+      const state = lock === undefined ? "" : lock === id ? "won" : "lost";
+      const mark = state === "won" ? "W" : state === "lost" ? "L" : `${pct}%`;
+      return `<button class="side ${state}" data-k="${k}" data-team="${id}" aria-pressed="${state === "won"}" style="--w:${pct}%" title="${esc(t.name)}: ${state ? "click to undo" : `${pct}% to win, click to lock in a win`}">
+        <span class="ab">${esc(t.abbrev)}</span><span class="nm">${esc(t.name)}</span><span class="pts">${pts.toFixed(1)}</span><span class="pr">${mark}</span></button>`;
+    };
+    const sel = g.home === selId || g.away === selId;
+    return `<div class="match${sel ? " sel" : ""}">${side(g.home, mg.home, mg.pHome)}${side(g.away, mg.away, 1 - mg.pHome)}</div>`;
+  }).join("");
+
+  $("clear").hidden = !locks.size;
+  $("clear").textContent = `Clear ${plural(locks.size, "pick")}`;
+}
+
+function renderOdds() {
+  const r = result, base = baseline;
+  $("odds-hint").textContent = locks.size
+    ? `Percent of ${N.toLocaleString()} simulated seasons with your ${plural(locks.size, "pick")} locked in. Chg is the change in playoff odds from no picks.`
+    : `Percent of ${N.toLocaleString()} simulated seasons. Click a team to highlight its games and see its odds by final record.`;
+  const rows = teams.map((t, i) => {
+    const s = r.seeds[i];
+    const delta = Math.round((100 * (base.seeds[i][P] - s[P])) / N);
+    const chg = locks.size ? `<td class="chg ${delta > 0 ? "up" : delta < 0 ? "down" : ""}">${delta > 0 ? "+" : ""}${delta || ""}</td>` : "";
+    const row = `<tr class="${i === selected ? "sel" : ""}">${teamCell(t, i)}
+      <td class="num">${record(t.wins, t.losses, t.ties)}</td>
+      <td class="num">${t.pf.toFixed(1)}</td>
+      <td class="num">${ptsPerWeek[mi][i].toFixed(1)}</td>
+      ${heat(N - s[P], N, "po")}${chg}
+      ${s.slice(0, P).map((n) => heat(n, N)).join("")}${heat(s[P], N, "out")}
+    </tr>`;
+    return i === P - 1 ? row + `<tr class="cut"><td colspan="${P + 6 + (locks.size ? 1 : 0)}"><div>Current playoff line</div></td></tr>` : row;
+  });
+  $("odds-table").innerHTML = `<thead><tr><th class="l">Now / Team</th><th class="r">Rec</th><th class="r">PF</th><th class="r">Pts/wk<small>expected</small></th><th>Playoffs</th>${locks.size ? '<th class="l">Chg</th>' : ""}${seedHeads}</tr></thead><tbody>${rows.join("")}</tbody>`;
+}
+
+function renderSchedule() {
+  const m = methods[mi];
+  $("sched-hint").textContent = `Win chance in each remaining game. Strength of schedule (SOS) is the average expected points of a team's remaining opponents.${locks.size ? " Your picks show as W or L." : ""}`;
+  const games = teams.map(() => []);
+  L.games.forEach((g, k) => {
+    const mg = m.games[k], lock = locks.get(k);
+    games[tIdx.get(g.home)].push({ week: g.week, opp: g.away, p: mg.pHome, oppPts: mg.away, won: lock === undefined ? null : lock === g.home });
+    games[tIdx.get(g.away)].push({ week: g.week, opp: g.home, p: 1 - mg.pHome, oppPts: mg.home, won: lock === undefined ? null : lock === g.away });
+  });
+  const sos = games.map((gs) => sum(gs.map((x) => x.oppPts)) / gs.length);
+  const rank = sos.map((v) => 1 + sos.filter((u) => u > v).length);
+  const ordinal = (n) => n + ({ 1: "st", 2: "nd", 3: "rd" }[n] || "th"); // ESPN leagues max out at 20 teams
+  const rows = teams.map((t, i) => {
+    const cells = weeks.map((w) => {
+      const x = games[i].find((x) => x.week === w);
+      if (!x) return "<td></td>";
+      const vs = `<small>vs ${esc(byId.get(x.opp).abbrev)}</small>`;
+      if (x.won !== null) return `<td class="win"><span class="${x.won ? "won" : "lost"}">${vs}<b>${x.won ? "W" : "L"}</b></span></td>`;
+      const pct = 100 * x.p, d = Math.abs(pct - 50);
+      const b = d < 5 ? 0 : d < 10 ? 1 : d < 20 ? 2 : d < 30 ? 3 : 4;
+      return `<td class="win${pct < 50 ? " out" : ""}"><span class="b${b}">${vs}<b>${Math.round(pct)}%</b></span></td>`;
+    }).join("");
+    const expWins = sum(games[i].map((x) => (x.won === null ? x.p : +x.won)));
+    return `<tr class="${i === selected ? "sel" : ""}">${teamCell(t, i)}${cells}
+      <td class="num">${expWins.toFixed(1)}</td><td class="num">${sos[i].toFixed(1)}</td><td class="num">${ordinal(rank[i])}</td></tr>`;
+  });
+  $("sched-table").innerHTML = `<thead><tr><th class="l">Now / Team</th>${weeks.map((w) => `<th>Wk ${w}</th>`).join("")}
+    <th class="r">Exp wins<small>rest of season</small></th><th class="r">Opp pts/wk<small>expected</small></th><th class="r">SOS<small>1st = hardest</small></th></tr></thead><tbody>${rows.join("")}</tbody>`;
+}
+
+function renderRecord() {
+  const t = teams[selected], rows = result.byRecord[selected], left = rows.length - 1;
+  $("team-select").value = selected;
+  $("record-hint").textContent = `Every simulated season grouped by where ${t.name} ends up. Records that never happen${locks.size ? " with your picks" : ""} are left out.`;
+  const body = [];
+  for (let k = left; k >= 0; k--) {
+    const r = rows[k], total = sum(r);
+    if (!total) continue;
+    body.push(`<tr>
+      <td class="rec">${record(t.wins + k, t.losses + left - k, t.ties)}</td>
+      <td class="rest">${k}-${left - k}</td>
+      <td class="num">${fmt(total, N)}</td>
+      ${heat(total - r[P], total, "po")}
+      ${r.slice(0, P).map((n) => heat(n, total)).join("")}${heat(r[P], total, "out")}
+    </tr>`);
+  }
+  $("record-table").innerHTML = `<thead><tr><th class="l">Final</th><th class="l">Rest<small>of season</small></th><th class="r">Chance<small>of record</small></th><th>Playoffs</th>${seedHeads}</tr></thead><tbody>${body.join("")}</tbody>`;
+}
+
+function render() {
+  $("method-about").textContent = methods[mi].about;
+  renderPicks();
+  renderOdds();
+  renderSchedule();
+  renderRecord();
+}
+function run() {
+  result = simulate(L, methods[mi], locks, N, RNG_SEED);
+  render();
+}
+
+$("method").addEventListener("change", (e) => {
+  mi = +e.target.value;
+  baseline = simulate(L, methods[mi], new Map(), N, RNG_SEED);
+  run();
+});
+$("weeks").addEventListener("click", (e) => {
+  const b = e.target.closest(".wk");
+  if (!b) return;
+  activeWeek = +b.dataset.week;
+  renderPicks();
+});
+$("matches").addEventListener("click", (e) => {
+  const b = e.target.closest(".side");
+  if (!b) return;
+  const k = +b.dataset.k, id = +b.dataset.team;
+  locks.get(k) === id ? locks.delete(k) : locks.set(k, id);
+  run();
+});
+for (const id of ["odds-table", "sched-table"]) {
+  $(id).addEventListener("click", (e) => {
+    const b = e.target.closest(".team-btn");
+    if (b) { selected = +b.dataset.i; render(); }
+  });
+}
+$("team-select").addEventListener("change", (e) => { selected = +e.target.value; render(); });
+$("clear").addEventListener("click", () => { locks.clear(); run(); });
+
+const weeksLeft = L.regularSeasonWeeks - L.throughWeek;
+$("league-name").textContent = L.league;
+$("eyebrow").innerHTML = `<span>${L.season} season</span><span>Week ${L.throughWeek + 1} of ${L.regularSeasonWeeks}</span><span>${plural(weeksLeft, "week")} left</span>`;
+$("facts").innerHTML = `<span>Ties in record go to points for</span>`;
+$("method").innerHTML = methods.map((m, j) => `<option value="${j}">${esc(m.name)}</option>`).join("");
+$("team-select").innerHTML = teams.map((t, i) => `<option value="${i}">${esc(t.abbrev)} - ${esc(t.name)}</option>`).join("");
+$("legend").innerHTML = `<span class="key">Percent</span>` + LABELS.map((l, b) => `<span class="b${b + 1}">${l}</span>`).join("") + `<span class="key" style="margin-left:8px">Out column uses the same steps in orange</span>`;
+$("sched-legend").innerHTML = `<span class="key">Win chance</span><span class="b4">80+</span><span class="b3">70-80</span><span class="b2">60-70</span><span class="b1">55-60</span><span class="even">45-55</span>`
+  + `<span class="out" style="display:contents"><span class="b1">40-45</span><span class="b2">30-40</span><span class="b3">20-30</span><span class="b4">&lt;20</span></span>`;
+const pulled = new Date(L.pulled).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+$("notes").innerHTML = `<h2>How the simulation works</h2><ul>
+  <li>Data pulled from ESPN on ${pulled}, through week ${L.throughWeek}. Week ${L.throughWeek + 1} counts as unplayed until ESPN finalizes it and the data is pulled again.</li>
+  <li>Each simulated game draws both teams' scores from a bell curve centered on the method's expected points for that team that week. Lock a winner and the scores are redrawn until that team wins, so points-for tiebreaks stay realistic.</li>
+  <li>Seeding uses record first, then total points for, with simulated points added.</li>
+  <li>The ESPN projections method uses current rosters and assumes no waiver pickups or trades. A team with several starters on bye starts whoever it has left, even if that leaves a slot empty, so its projection for that week is lower than it will really be.</li>
+  <li>Projections for later weeks don't know about injuries that haven't happened yet.</li>
+</ul>`;
+
+render();
+</script>
+</body>
+</html>
