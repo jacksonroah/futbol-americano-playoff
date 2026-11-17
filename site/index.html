@@ -105,6 +105,11 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 }
 .side + .side { border-top: 1px solid var(--line); }
 .side .nm { font-family: var(--font-display); font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side .nm .rec { margin-left: 6px; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--muted); }
+/* Records that include your picks */
+.rec.hl { color: var(--accent); font-weight: 700; background: color-mix(in srgb, var(--accent) 13%, transparent); border-radius: 4px; padding: 1px 4px; }
+.side.won .nm .rec { color: inherit; }
+.side.won .rec.hl { background: color-mix(in srgb, var(--pick-ink) 20%, transparent); }
 .side .pts { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .side .pr { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
 .side.won { background: var(--pick); color: var(--pick-ink); }
@@ -210,6 +215,8 @@ td.ctr { padding: 0 8px; text-align: center; color: var(--ink-2); }
   .matches { grid-template-columns: 1fr 1fr; gap: 8px; }
   .side { grid-template-columns: minmax(0, 1fr) auto 30px; gap: 6px; padding: 10px 8px; }
   .side .nm { font-size: 15px; }
+  .side { padding-block: 7px; }
+  .side .nm .rec { display: block; width: fit-content; margin: 1px 0 0; font-size: 12px; line-height: 1.3; } /* no room beside the name in 2-across cards */
   .side .pts { font-size: 12px; }
   .side .pr, .side.won .pr, .side.lost .pr { font-size: 14px; }
 
@@ -253,7 +260,7 @@ td.ctr { padding: 0 8px; text-align: center; color: var(--ink-2); }
   <section class="panel" aria-labelledby="picks-h">
     <div class="sec-head">
       <h2 id="picks-h">Pick winners</h2>
-      <p class="hint">Click a team to lock in its win; click again to undo. Unpicked games are simulated. Each row shows expected points and win chance.</p>
+      <p class="hint">Click a team to lock in its win; click again to undo. Unpicked games are simulated. Each row shows record, expected points and win chance.</p>
       <button class="ghost push" id="clear" hidden></button>
     </div>
     <div class="weeks" role="tablist" aria-label="Week" id="weeks"></div>
@@ -325,6 +332,18 @@ const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">
 const record = (w, l, t) => (t ? `${w}-${l}-${t}` : `${w}-${l}`);
 const sum = (a) => a.reduce((x, y) => x + y, 0);
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+// Current record plus locked picks through week w, highlighted when a pick changed it
+function recSpan(id, w = Infinity) {
+  const t = byId.get(id);
+  let wins = t.wins, losses = t.losses;
+  locks.forEach((winner, k) => {
+    const g = L.games[k];
+    if (g.week > w || (g.home !== id && g.away !== id)) return;
+    winner === id ? wins++ : losses++;
+  });
+  const changed = wins + losses > t.wins + t.losses;
+  return `<span class="rec${changed ? " hl" : ""}"${changed ? ` title="${record(t.wins, t.losses, t.ties)} now, plus your picks"` : ""}>${record(wins, losses, t.ties)}</span>`;
+}
 
 // Expected points per week for each team under each method (average over its remaining games)
 const ptsPerWeek = methods.map((m) => teams.map((t) => {
@@ -367,7 +386,7 @@ function renderPicks() {
       const state = lock === undefined ? "" : lock === id ? "won" : "lost";
       const mark = state === "won" ? "W" : state === "lost" ? "L" : `${pct}%`;
       return `<button class="side ${state}" data-k="${k}" data-team="${id}" aria-pressed="${state === "won"}" style="--w:${pct}%" title="${esc(t.owner)}: ${state ? "click to undo" : `${pct}% to win, click to lock in a win`}">
-        <span class="nm">${esc(t.owner)}</span><span class="pts">${pts.toFixed(1)}</span><span class="pr">${mark}</span></button>`;
+        <span class="nm">${esc(t.owner)}${recSpan(id, g.week)}</span><span class="pts">${pts.toFixed(1)}</span><span class="pr">${mark}</span></button>`;
     };
     const sel = g.home === selId || g.away === selId;
     return `<div class="match${sel ? " sel" : ""}">${side(g.home, mg.home, mg.pHome)}${side(g.away, mg.away, 1 - mg.pHome)}</div>`;
@@ -380,14 +399,14 @@ function renderPicks() {
 function renderOdds() {
   const r = result, base = baseline;
   $("odds-hint").textContent = locks.size
-    ? `Percent of ${N.toLocaleString()} simulated seasons with your ${plural(locks.size, "pick")} locked in. Chg is the change in playoff odds from no picks.`
+    ? `Percent of ${N.toLocaleString()} simulated seasons with your ${plural(locks.size, "pick")} locked in. Highlighted records include your picks. Chg is the change in playoff odds from no picks.`
     : `Percent of ${N.toLocaleString()} simulated seasons. Click a team to highlight its games and see its odds by final record.`;
   const rows = teams.map((t, i) => {
     const s = r.seeds[i];
     const delta = Math.round((100 * (base.seeds[i][P] - s[P])) / N);
     const chg = locks.size ? `<td class="chg ${delta > 0 ? "up" : delta < 0 ? "down" : ""}">${delta > 0 ? "+" : ""}${delta || ""}</td>` : "";
     const row = `<tr class="${i === selected ? "sel" : ""}">${teamCell(t, i)}
-      <td class="num">${record(t.wins, t.losses, t.ties)}</td>
+      <td class="num">${recSpan(t.id)}</td>
       <td class="num hide-sm">${t.pf.toFixed(1)}</td>
       <td class="num hide-sm">${ptsPerWeek[mi][i].toFixed(1)}</td>
       ${heat(N - s[P], N, "po")}${chg}
